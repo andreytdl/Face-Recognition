@@ -1,59 +1,88 @@
 import cv2
 import numpy as np
 
-# Por Default a webcam fica no 0
+# Default entry for the notebook webcam is 0
 cap = cv2.VideoCapture(0)
 
-#Bibliotecas HaarCascade
+#cap = cv2.VideoCapture('avengers.mp4')
+
+#HaarCascade Libraries
 face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 eye_cascade = cv2.CascadeClassifier('haarcascade_eye.xml')
 
+# Default resolutions of the frame are obtained.The default resolutions are system dependent.
+	
+# We convert the resolutions from float to integer.
+frame_width = int(cap.get(3))
+frame_height = int(cap.get(4))
 
+# Define the codec and create VideoWriter object.The output is stored in 'outpy.avi' file.
+# Define the fps to be equal to 10. Also frame size is passed.
+original_out = cv2.VideoWriter('original.avi',cv2.VideoWriter_fourcc('M','J','P','G'), 21, (frame_width,frame_height))
+recognition_output = cv2.VideoWriter('recognized.avi',cv2.VideoWriter_fourcc('M','J','P','G'), 21, (frame_width,frame_height))
 
-#Um vídeo são vários frames passando por segundo por isso while true
+#One video is a lot of frames per second, that's why we use while true.
 while True:
     
-    #ret é o retorno e irá vir como true ou false
-    #frame é a propria imagem em si
+    #ret is the return and will be true or false
+    #frame is the image that it is reading
     ret, frame = cap.read()
 
-    #Deixa o frame que é BGR em preto e branco 
+    frame = cv2.flip(frame, 1)
+
+    # Recording - Write the original frame into the file 'original.avi'
+    original_out.write(frame)
+
+
+    #It makes the BGR frame turns into black and white. 
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-    #Detecta Faces dentro do gray - Os valores numéricos são padrões
-    faces = face_cascade.detectMultiScale(gray, 1.3, 5)
+    #Detects Faces into the gray frame - The numeric values are parameters (See it on the documentation)
+    faces = face_cascade.detectMultiScale(gray, 1.3, 3)
 	
-    #A face começa no X e no Y e tem o tamanho W e H
+    #The face starts at X and Y and have size W and H
     for (x,y,w,h) in faces:
-        
-        #Colocando o quadrado dentro de frame
+
+        #Setting the square into the frame (face)
         cv2.rectangle(frame,(x,y),(x+w,y+h),(255,0,0),2)
         
+        #Taking the square of the gray frame that contains the face
         roi_gray = gray[y:y+h, x:x+w]
+
+        #If you wanna see you can remove the comment below
         ##cv2.imshow("roi_gray", roi_gray) 
 
+        #Taking the square of the colored frame that contains the face
         roi_color = frame[y:y+h, x:x+w]
+
+        #If you wanna see you can remove the comment below
         #cv2.imshow("Face encontrada", roi_color)
 
-        #O olho será detectado apenas dentro da face
+        #The eye will only be detected if it is inside the face square
         eyes = eye_cascade.detectMultiScale(roi_gray)
         for (ex, ey, ew, eh) in eyes:
+            #Displaying a green retangle for eyes
             cv2.rectangle(roi_color, (ex, ey), (ex+ew, ey+eh), (0, 255, 0), 2)
-            cv2.imshow("olho", roi_color[ey:ey+eh, ex:ex+ew])
+            #Opening a new window to show the eye found
+            #cv2.imshow("eye", roi_color[ey:ey+eh, ex:ex+ew])
 
     
 
+    #showing the camera with all the squares and detections
+    cv2.imshow("image", frame)
 
-    #para preto e branco trocamos o "frame" por gray
-    cv2.imshow("frame", frame)
-
+    # Recording - Write the recognition frame into the file 'recognized.avi'
+    recognition_output.write(frame)
     
-    #No waitKey esperamos 1 milesimo de segundo, se colocarmos 1000 os frames serão 1 frame por segundo/
-    #Nada mais é do que os frames por segundo
+    #The waitKey receives 1 because it waits for 1 milissecond, displaying the frame on the screen
+    #If you wanna see it running 1 FPS is just change 1 for 1000
     key = cv2.waitKey(1) 
     
     if key == 27:
         break
 
+#Releasing and destroying everything
 cap.release()
+original_out.release()
+recognition_output.release()
 cv2.destroyAllWindows()
